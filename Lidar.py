@@ -39,10 +39,9 @@ class Lidar:
         for angle, dist in zip(angles, ranges):
             # Проверка перепрыгивания угла (360 → 0)
             if (
-                    (self.last_angle_deg is not None
-                     and self.last_angle_deg > 270.0
-                     and angle < 90.0)
-                    or (len(self.current_revo) > 100)
+                    self.last_angle_deg is not None
+                    and self.last_angle_deg > 270.0
+                    and angle < 90.0
             ):
                 # wrap detected: finalize revolution
                 if self.current_revo:
