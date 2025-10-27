@@ -23,7 +23,7 @@ def main():
                 print(a)
                 print("-------")
                 last_lidar_time = lidar_updated_time
-                add_points_to_map(log_odds, lidar_points, 0, 0, MAP_ORIGIN, MAP_ORIGIN)
+                add_points_to_map(log_odds, lidar_points, 0, 0, MAP_ORIGIN, MAP_ORIGIN, 0)
             visualizer.render()
 
 

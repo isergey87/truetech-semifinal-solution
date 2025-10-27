@@ -11,8 +11,8 @@ occupied_mask = np.zeros((MAP_SIZE, MAP_SIZE), dtype=bool)
 
 
 def to_index(x, y):
-    gx = MAP_ORIGIN + np.floor(x / MAP_RESOLUTION).astype(int)
-    gy = MAP_ORIGIN + np.floor(y / MAP_RESOLUTION).astype(int)
+    gx = MAP_ORIGIN + np.floor(x / MAP_RESOLUTION).astype(np.int32)
+    gy = MAP_ORIGIN + np.floor(y / MAP_RESOLUTION).astype(np.int32)
     return gx, gy
 
 
@@ -52,13 +52,35 @@ def update_log_odds_numba(
                 log_odds[fx, fy] = min(lo_max, max(lo_min, log_odds[fx, fy] + lo_free))
 
 
-def add_points_to_map(log_odds, points, x, y, rx_idx, ry_idx):
+def add_points_to_map(log_odds, points, x, y, rx_idx, ry_idx, theta_rad):
+    """
+    Добавляет lidar-точки в карту log_odds с учётом угла поворота робота.
+
+    points: np.ndarray (N, 2) [угол°, дистанция м]
+    x, y: позиция робота в глобальных координатах
+    theta_rad: ориентация робота в радианах (0 вдоль оси X)
+    """
+
+    if points.size == 0:
+        return
+
+    # === 1. Переводим в локальные координаты лидара ===
     angles = np.deg2rad(points[:, 0])
     ranges = points[:, 1]
     lx = ranges * np.cos(angles)
     ly = ranges * np.sin(angles)
-    gx_idx, gy_idx = to_index(x + lx, y + ly)
 
+    # === 2. Поворот относительно угла робота ===
+    cos_t = np.cos(theta_rad)
+    sin_t = np.sin(theta_rad)
+
+    gx_world = x + lx * cos_t - ly * sin_t
+    gy_world = y + lx * sin_t + ly * cos_t
+
+    # === 3. В индексы карты ===
+    gx_idx, gy_idx = to_index(gx_world, gy_world)
+
+    # === 4. Обновление карты ===
     update_log_odds_numba(
         gx_idx.astype(np.int32),
         gy_idx.astype(np.int32),
