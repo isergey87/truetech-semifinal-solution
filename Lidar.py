@@ -15,6 +15,7 @@ class Lidar:
         self.current_revo = []
         self.last_angle_deg = None
         self.last_revo_points = None
+        self.updated_time = time.time()
 
         if mode == 'serial':
             self.channel = serial.Serial(port, baud, timeout=timeout)
@@ -46,8 +47,8 @@ class Lidar:
                 # wrap detected: finalize revolution
                 if self.current_revo:
                     self.last_revo_points = np.array(self.current_revo, dtype=np.float32)
+                    self.updated_time = time.time()
                 self.current_revo = []  # начинаем новый оборот
-                print(f"{time.time()} full scan")
 
             # добавляем текущую точку
             self.current_revo.append((angle, dist))
@@ -76,10 +77,8 @@ class Lidar:
             frame_count += 1
             last_t = now
 
-            print(f"LD19, fps={fps_ema:.1f} fps_inst={fps_inst:.1f} start={parsed["start_deg"]} end={parsed["end_deg"]}")
-
     def get_last_revo_points(self):
-        return self.last_revo_points
+        return self.last_revo_points, self.updated_time
 
     def stopped(self):
         """Return True if the telemetry thread has stopped."""
